@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>BlogHub - Home</title>
+
+    <link
+        rel="stylesheet"
+        href="/static/css/style.css"
+    >
+
+</head>
+
+<body>
+
+    <nav class="navbar">
+
+        <div class="logo">
+            BlogHub
+        </div>
+
+        <div class="nav-links">
+
+            <a
+                href="/"
+                class="nav-link"
+            >
+                Home
+            </a>
+
+            <a
+                href="/login"
+                id="loginLink"
+                class="nav-link"
+            >
+                Login
+            </a>
+
+            <a
+                href="/register"
+                id="registerLink"
+                class="nav-link"
+            >
+                Register
+            </a>
+
+            <a
+                href="/profile"
+                id="profileLink"
+                class="nav-link"
+                style="display: none;"
+            >
+                Profile
+            </a>
+
+            <a
+                href="/new-post"
+                id="newPostLink"
+                class="nav-link"
+                style="display: none;"
+            >
+                New Post
+            </a>
+
+            <button
+                id="logoutButton"
+                class="nav-button"
+                style="display: none;"
+                onclick="logout()"
+            >
+                Logout
+            </button>
+
+            <button
+                onclick="changeMode()"
+                class="mode-button"
+            >
+                🌙
+            </button>
+
+        </div>
+
+    </nav>
+
+
+    <main>
+
+        <section class="hero">
+
+            <h1>
+                Welcome to BlogHub
+            </h1>
+
+            <p>
+                Discover interesting stories, ideas and
+                knowledge from our community.
+            </p>
+
+            <a
+                href="#blogs"
+                class="hero-button"
+            >
+                Explore Blogs
+            </a>
+
+        </section>
+
+
+        <section
+            class="blogs-section"
+            id="blogs"
+        >
+
+            <div class="section-header">
+
+                <h2>
+                    Latest Blogs
+                </h2>
+
+                <p>
+                    Explore our latest articles
+                </p>
+
+            </div>
+
+
+            <div
+                id="blogContainer"
+                class="blog-container"
+            >
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <script src="/static/js/app.js"></script>
+
+</body>
+
+</html>

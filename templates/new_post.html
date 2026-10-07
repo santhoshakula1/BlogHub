@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+    <title>Create Post - BlogHub</title>
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <link
+        rel="stylesheet"
+        href="/static/css/style.css"
+    >
+
+</head>
+
+<body>
+
+    <div class="form-container">
+
+        <h2>
+            Create New Post
+        </h2>
+
+        <form
+            id="postForm"
+            onsubmit="event.preventDefault(); createPost();"
+        >
+
+            <input
+                type="text"
+                id="title"
+                placeholder="Post title"
+                required
+            >
+
+            <textarea
+                id="content"
+                rows="8"
+                placeholder="Write your blog..."
+                required
+            ></textarea>
+
+            <button type="submit">
+                Publish Post
+            </button>
+
+        </form>
+
+        <p id="message"></p>
+
+        <p>
+
+            <a href="/">
+                Back to Home
+            </a>
+
+        </p>
+
+    </div>
+
+    <script src="/static/js/app.js"></script>
+
+</body>
+
+</html>

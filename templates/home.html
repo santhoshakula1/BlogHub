@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Blog Platform</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+
+<body>
+
+    <h1>My Blog</h1>
+   
+
+    {% for post in posts %}
+        
+
+        <article>
+            
+
+            <h2>{{ post.title }}</h2>
+
+            <p>Author: {{ post.author }}</p>
+
+            <p>{{ post.content }}</p>
+            
+            
+
+        </article>
+        
+
+        <hr>
+
+        
+
+    {% endfor %}
+    {% if posts|length==0%}
+        <p>No posts Available</p>
+        
+    {% else %}
+        <h2>Total Posts:{{posts|length}}</h2>
+    {% endif %}
+    
+    <script src="/static/js/app.js"></script>
+    
+
+</body>
+</html>

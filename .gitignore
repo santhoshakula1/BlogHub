@@ -1,0 +1,23 @@
+# Secrets - NEVER upload
+.env
+.env.*
+!.env.example
+
+# Python junk
+venv/
+.venv/
+env/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Editor and OS files
+.vscode/
+.idea/
+Thumbs.db
+
+# Logs
+*.log
+
+.postman/
+postman/globals/

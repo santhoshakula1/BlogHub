@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+    <title>Blog - BlogHub</title>
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <link
+        rel="stylesheet"
+        href="/static/css/style.css"
+    >
+
+</head>
+
+<body>
+
+    <nav class="navbar">
+
+        <div class="logo">
+            BlogHub
+        </div>
+
+        <div class="nav-links">
+
+            <a href="/">
+                Home
+            </a>
+
+            <a href="/profile">
+                Profile
+            </a>
+
+            <a href="/new-post">
+                New Post
+            </a>
+
+        </div>
+
+    </nav>
+
+
+    <main class="blog-details">
+
+        <h1 id="blogTitle">
+            Loading...
+        </h1>
+
+        <p id="blogAuthor"></p>
+
+        <article id="blogContent">
+        </article>
+
+        <div class="share-section">
+
+            <h3>
+                Share this blog
+            </h3>
+
+            <button onclick="copyLink()">
+                Copy Link
+            </button>
+
+            <button onclick="shareWhatsApp()">
+                WhatsApp
+            </button>
+
+            <button onclick="shareEmail()">
+                Email
+            </button>
+
+        </div>
+
+    </main>
+
+
+    <script>
+
+        const blogId =
+            window.location.pathname
+                .split("/")
+                .pop();
+
+
+        async function getBlog() {
+
+            try {
+
+                const response =
+                    await fetch(
+                        `/api/posts/${blogId}`
+                    );
+
+                if (!response.ok) {
+
+                    throw new Error(
+                        "Blog not found"
+                    );
+                }
+
+                const blog =
+                    await response.json();
+
+                document
+                    .getElementById(
+                        "blogTitle"
+                    )
+                    .innerText =
+                    blog.title;
+
+                document
+                    .getElementById(
+                        "blogAuthor"
+                    )
+                    .innerText =
+                    "By " + blog.author;
+
+                document
+                    .getElementById(
+                        "blogContent"
+                    )
+                    .innerText =
+                    blog.content;
+
+            } catch (error) {
+
+                document
+                    .getElementById(
+                        "blogTitle"
+                    )
+                    .innerText =
+                    "Blog not found";
+            }
+        }
+
+
+        function copyLink() {
+
+            navigator.clipboard.writeText(
+                window.location.href
+            );
+
+            alert(
+                "Link copied!"
+            );
+        }
+
+
+        function shareWhatsApp() {
+
+            const url =
+                encodeURIComponent(
+                    window.location.href
+                );
+
+            window.open(
+                `https://wa.me/?text=${url}`,
+                "_blank"
+            );
+        }
+
+
+        function shareEmail() {
+
+            const url =
+                window.location.href;
+
+            window.location.href =
+                `mailto:?subject=Check this blog&body=${url}`;
+        }
+
+
+        getBlog();
+
+    </script>
+
+</body>
+
+</html>
