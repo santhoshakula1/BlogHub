@@ -652,3 +652,122 @@ document.addEventListener(
         loadProfile();
     }
 );
+// =========================================================
+// EDIT POST
+// =========================================================
+
+function getPostId() {
+
+    return window.location.pathname.split("/").pop();
+}
+
+
+async function loadPostForEdit() {
+
+    if (!isLoggedIn()) {
+
+        window.location.href = "/login";
+
+        return;
+    }
+
+    const response = await fetch("/api/posts/" + getPostId());
+
+    if (!response.ok) {
+
+        document.getElementById("message").textContent = "Post not found.";
+
+        return;
+    }
+
+    const post = await response.json();
+
+    document.getElementById("title").value = post.title;
+
+    document.getElementById("content").value = post.content;
+}
+
+
+async function updatePost() {
+
+    const title = document.getElementById("title").value.trim();
+
+    const content = document.getElementById("content").value.trim();
+
+    const message = document.getElementById("message");
+
+    if (!title || !content) {
+
+        message.textContent = "Please enter title and content.";
+
+        return;
+    }
+
+    const response = await fetch("/api/posts/" + getPostId(), {
+
+        method: "PUT",
+
+        headers: {
+            "Content-Type": "application/json",
+            ...getAuthHeaders()
+        },
+
+        body: JSON.stringify({
+            title: title,
+            content: content
+        })
+    });
+
+    if (response.status === 401) {
+
+        logout();
+
+        return;
+    }
+
+    if (response.status === 403) {
+
+        message.textContent = "You can only edit your own posts.";
+
+        return;
+    }
+
+    if (!response.ok) {
+
+        message.textContent = "Could not update post.";
+
+        return;
+    }
+
+    window.location.href = "/blog/" + getPostId();
+}
+
+
+// Shows the Edit button on the blog page, only for the post's author
+async function showEditButton(authorId) {
+
+    if (!isLoggedIn()) {
+
+        return;
+    }
+
+    const response = await fetch("/api/auth/me", {
+        headers: getAuthHeaders()
+    });
+
+    if (!response.ok) {
+
+        return;
+    }
+
+    const me = await response.json();
+
+    if (me.id === authorId) {
+
+        const link = document.getElementById("editPostLink");
+
+        link.href = "/edit-post/" + getPostId();
+
+        link.classList.remove("hidden");
+    }
+}

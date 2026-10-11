@@ -119,6 +119,17 @@ def new_post_page(request: Request):
             "request": request
         }
     )
+@app.get("/edit-post/{post_id}")
+def edit_post_page(request: Request, post_id: int):
+
+    return templates.TemplateResponse(
+        request=request,
+        name="edit_post.html",
+        context={
+            "request": request,
+            "post_id": post_id
+        }
+    )
 
 
 @app.get("/blog/{post_id}")
@@ -236,7 +247,7 @@ def update_post(
             detail="Post not found"
         )
 
-    if post.author != current_user.username:
+    if post.author_id != current_user.id:
 
         raise HTTPException(
             status_code=403,
@@ -274,7 +285,7 @@ def delete_post(
             detail="Post not found"
         )
 
-    if post.author != current_user.username:
+    if post.author_id != current_user.id: 
 
         raise HTTPException(
             status_code=403,

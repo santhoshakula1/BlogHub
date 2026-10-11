@@ -25,9 +25,8 @@ class PostCreate(BaseModel):
 # Used when FastAPI sends post data back to the frontend.
 # =========================================================
 class PostUpdate(BaseModel):
-    title: str
-    content: str
-    author: str
+    title: str = Field(..., min_length=1, max_length=100)
+    content: str = Field(..., min_length=1)
 
 
 

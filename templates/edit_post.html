@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Edit Post - BlogHub</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+
+    <div class="form-container">
+
+        <h2>Edit Post</h2>
+
+        <form onsubmit="event.preventDefault(); updatePost();">
+
+            <input type="text" id="title" placeholder="Post title" maxlength="100" required>
+
+            <textarea id="content" rows="8" placeholder="Write your blog..." required></textarea>
+
+            <button type="submit">Save Changes</button>
+
+        </form>
+
+        <p id="message"></p>
+
+        <p><a href="/">Back to Home</a></p>
+
+    </div>
+
+    <script src="/static/js/app.js"></script>
+    <script>loadPostForEdit();</script>
+
+</body>
+</html>
