@@ -493,7 +493,8 @@ async function loadPosts() {
                     </p>
 
                     <p class="blog-author">
-                        By ${escapeHTML(post.author)}
+                        By ${escapeHTML(post.author.username)}
+                        . ${formatDate(post.created_at)}
                     </p>
 
                     <a
@@ -520,7 +521,21 @@ async function loadPosts() {
             "<p>Unable to load blog posts.</p>";
     }
 }
+function formatDate(value) {
 
+    if (!value) {
+        return "";
+    }
+
+    return new Date(value).toLocaleDateString(
+        "en-IN",
+        {
+            day: "numeric",
+            month: "short",
+            year: "numeric"
+        }
+    );
+}
 
 function escapeHTML(value) {
 

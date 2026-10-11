@@ -345,7 +345,7 @@ def register_user(
 
         raise HTTPException(
             status_code=500,
-            detail=str(e)
+            detail="Could not create user"
         )
 
     return new_user

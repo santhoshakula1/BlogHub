@@ -1,12 +1,7 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field,ConfigDict
 from datetime import datetime
 
 
-# =========================================================
-# CREATE POST SCHEMA
-# =========================================================
-# Used when the client sends data to create a new post.
-# =========================================================
 
 class PostCreate(BaseModel):
     title: str = Field(
@@ -19,21 +14,20 @@ class PostCreate(BaseModel):
         ...,
         min_length=1
     )
-# =========================================================
-# POST OUTPUT SCHEMA
-# =========================================================
-# Used when FastAPI sends post data back to the frontend.
-# =========================================================
+
+
 class PostUpdate(BaseModel):
     title: str = Field(..., min_length=1, max_length=100)
     content: str = Field(..., min_length=1)
 
 
-
+class AuthorOut(BaseModel):
+        username: str
+        
 class UserCreate(BaseModel):
-    username: str
-    email: str
-    password: str
+    username: str = Field(..., min_length=3, max_length=50)
+    email: str = Field(..., min_length=5, max_length=100)
+    password: str = Field(..., min_length=6)
     
 class UserLogin(BaseModel):
     username: str
@@ -45,14 +39,16 @@ class UserOut(BaseModel):
     username: str
     email: str
     created_at: datetime
-    class Config:
-        from_attributes = True
+    
 
 class PostOut(BaseModel):
     id: int
     title: str
     content: str
     author_id: int
+    author: AuthorOut
+    created_at: datetime
+    
 
-    class Config:
-        from_attributes = True
+
+    model_config = ConfigDict(from_attributes=True)

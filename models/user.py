@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy import String, DateTime,Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -37,7 +37,7 @@ class User(Base):
     created_at: Mapped[datetime | None] = mapped_column(
     DateTime,
     nullable=True,
-    default=datetime.utcnow
+    default=lambda: datetime.now(timezone.utc)
     )
     bio: Mapped[str | None] = mapped_column(
     Text,

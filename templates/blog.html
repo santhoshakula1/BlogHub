@@ -120,7 +120,8 @@
                         "blogAuthor"
                     )
                     .innerText =
-                    "By " + blog.author;
+                    "By " + blog.author.username; +
+                    "" + formatDate(blog.created_at);
 
                 document
                     .getElementById(
