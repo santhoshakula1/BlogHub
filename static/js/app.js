@@ -404,8 +404,9 @@ async function createPost() {
             }
 
             message.textContent =
-                data.detail ||
-                "Could not create post.";
+                typeof data.detail ==="string"
+                ? data.detail
+                : "please check your title(max 100 characters) and content.";
 
             return;
         }
