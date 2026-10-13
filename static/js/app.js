@@ -2,7 +2,7 @@ const loginForm = document.getElementById("loginForm");
 
 if (loginForm) {
 
-    loginForm.addEventListener("submit", async function(event) {
+    loginForm.addEventListener("submit", async function (event) {
 
         event.preventDefault();
 
@@ -68,7 +68,7 @@ if (loginForm) {
             message.textContent =
                 "Login successful!";
 
-            setTimeout(function() {
+            setTimeout(function () {
 
                 window.location.href =
                     "/profile";
@@ -93,7 +93,7 @@ const registerForm = document.getElementById("registerForm");
 
 if (registerForm) {
 
-    registerForm.addEventListener("submit", async function(event) {
+    registerForm.addEventListener("submit", async function (event) {
 
         event.preventDefault();
 
@@ -404,9 +404,9 @@ async function createPost() {
             }
 
             message.textContent =
-                typeof data.detail ==="string"
-                ? data.detail
-                : "please check your title(max 100 characters) and content.";
+                typeof data.detail === "string"
+                    ? data.detail
+                    : "please check your title(max 100 characters) and content.";
 
             return;
         }
@@ -414,7 +414,7 @@ async function createPost() {
         message.textContent =
             "Post created successfully!";
 
-        setTimeout(function() {
+        setTimeout(function () {
 
             window.location.href = "/";
 
@@ -472,7 +472,7 @@ async function loadPosts() {
 
         postsContainer.innerHTML = "";
 
-        posts.forEach(function(post) {
+        posts.forEach(function (post) {
 
             const card =
                 document.createElement(
@@ -657,7 +657,7 @@ function loadDarkMode() {
 
 document.addEventListener(
     "DOMContentLoaded",
-    function() {
+    function () {
 
         updateAuthUI();
 
@@ -778,12 +778,82 @@ async function showEditButton(authorId) {
 
     const me = await response.json();
 
-    if (me.id === authorId) {
+    if (Number(me.id) !== Number(authorId)) {
 
-        const link = document.getElementById("editPostLink");
+        return;
+    }
+
+    const link = document.getElementById("editPostLink");
+
+    if (link) {
 
         link.href = "/edit-post/" + getPostId();
 
         link.classList.remove("hidden");
+    }
+
+    const deleteButton =
+        document.getElementById("deletePostButton");
+
+    if (deleteButton) {
+
+        deleteButton.classList.remove("hidden");
+    }
+}
+
+async function deletePost() {
+
+    const confirmed = confirm(
+        "Delete this post? This cannot be undone."
+    );
+
+    if (!confirmed) {
+        return;
+    }
+
+    if (!isLoggedIn()) {
+
+        window.location.href = "/login";
+
+        return;
+    }
+
+    try {
+
+        const response = await fetch(
+            `/api/posts/${getPostId()}`,
+            {
+                method: "DELETE",
+                headers: getAuthHeaders()
+            }
+        );
+
+        if (response.status === 401) {
+
+            logout();
+
+            return;
+        }
+
+        if (!response.ok) {
+
+            const data = await response.json();
+
+            alert(
+                typeof data.detail === "string"
+                    ? data.detail
+                    : "Could not delete the post."
+            );
+
+            return;
+        }
+
+        window.location.href = "/";
+
+    } catch (error) {
+
+        console.error("Delete post error:", error);
+
+        alert("Unable to connect to the server.");
     }
 }

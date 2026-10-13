@@ -6,15 +6,9 @@
 
     <title>Blog - BlogHub</title>
 
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <link
-        rel="stylesheet"
-        href="/static/css/style.css"
-    >
+    <link rel="stylesheet" href="/static/css/style.css">
 
 </head>
 
@@ -52,7 +46,8 @@
         </h1>
 
         <p id="blogAuthor"></p>
-                <a id="editPostLink" class="edit-button hidden" href="#">Edit Post</a>
+        <a id="editPostLink" class="edit-button hidden" href="#">Edit Post</a>
+        <button id="deletePostButton" class="delete-button" onclick="deletePost()">Delete Post</button>
 
         <article id="blogContent">
         </article>
@@ -78,7 +73,7 @@
         </div>
 
     </main>
-        <script src="/static/js/app.js"></script>
+    <script src="/static/js/app.js"></script>
 
 
     <script>
@@ -120,8 +115,8 @@
                         "blogAuthor"
                     )
                     .innerText =
-                    "By " + blog.author.username; +
-                    "" + formatDate(blog.created_at);
+                    "By " + blog.author.username +
+                    " · " + formatDate(blog.created_at);
 
                 document
                     .getElementById(
@@ -129,7 +124,7 @@
                     )
                     .innerText =
                     blog.content;
-                    showEditButton(blog.author_id);
+                showEditButton(blog.author_id);
 
             } catch (error) {
 
