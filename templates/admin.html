@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <title>Admin - BlogHub</title>
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <link
+        rel="stylesheet"
+        href="/static/css/style.css"
+    >
+
+</head>
+
+<body>
+
+    <nav class="navbar">
+
+        <div class="logo">
+            BlogHub
+        </div>
+
+        <div class="nav-links">
+
+            <a href="/">
+                Home
+            </a>
+
+            <a href="/profile">
+                Profile
+            </a>
+
+            <button
+                class="nav-button"
+                onclick="logout()"
+            >
+                Logout
+            </button>
+
+        </div>
+
+    </nav>
+
+
+    <main class="admin-panel">
+
+        <h1>
+            Admin Panel
+        </h1>
+
+        <p id="adminMessage" class="admin-message">
+            Loading users...
+        </p>
+
+        <table class="admin-table">
+
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Username</th>
+                    <th>Email</th>
+                    <th>Role</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+
+            <tbody id="adminUsersBody">
+            </tbody>
+
+        </table>
+
+    </main>
+
+
+    <script src="/static/js/app.js"></script>
+
+</body>
+
+</html>

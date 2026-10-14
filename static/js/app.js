@@ -666,6 +666,10 @@ document.addEventListener(
         loadPosts();
 
         loadProfile();
+
+        showAdminLink();
+
+        loadAdminUsers();
     }
 );
 // =========================================================
@@ -759,7 +763,9 @@ async function updatePost() {
 }
 
 
-// Shows the Edit button on the blog page, only for the post's author
+// Shows the Edit / Delete buttons on the blog page.
+// Edit    -> only the post's author
+// Delete  -> the post's author OR an admin
 async function showEditButton(authorId) {
 
     if (!isLoggedIn()) {
@@ -778,26 +784,31 @@ async function showEditButton(authorId) {
 
     const me = await response.json();
 
-    if (Number(me.id) !== Number(authorId)) {
+    const isOwner = Number(me.id) === Number(authorId);
 
-        return;
+    const isAdmin = me.is_admin === true;
+
+    if (isOwner) {
+
+        const link = document.getElementById("editPostLink");
+
+        if (link) {
+
+            link.href = "/edit-post/" + getPostId();
+
+            link.classList.remove("hidden");
+        }
     }
 
-    const link = document.getElementById("editPostLink");
+    if (isOwner || isAdmin) {
 
-    if (link) {
+        const deleteButton =
+            document.getElementById("deletePostButton");
 
-        link.href = "/edit-post/" + getPostId();
+        if (deleteButton) {
 
-        link.classList.remove("hidden");
-    }
-
-    const deleteButton =
-        document.getElementById("deletePostButton");
-
-    if (deleteButton) {
-
-        deleteButton.classList.remove("hidden");
+            deleteButton.classList.remove("hidden");
+        }
     }
 }
 
@@ -853,6 +864,222 @@ async function deletePost() {
     } catch (error) {
 
         console.error("Delete post error:", error);
+
+        alert("Unable to connect to the server.");
+    }
+}
+
+
+// =========================================================
+// ADMIN
+// =========================================================
+
+// Shows the "Admin" link in the navbar, only for admins
+async function showAdminLink() {
+
+    const adminLink = document.getElementById("adminLink");
+
+    if (!adminLink || !isLoggedIn()) {
+
+        return;
+    }
+
+    try {
+
+        const response = await fetch("/api/auth/me", {
+            headers: getAuthHeaders()
+        });
+
+        if (!response.ok) {
+
+            return;
+        }
+
+        const me = await response.json();
+
+        if (me.is_admin) {
+
+            adminLink.style.display = "inline-block";
+        }
+
+    } catch (error) {
+
+        console.error("Admin link error:", error);
+    }
+}
+
+
+// Fills the table on the /admin page
+async function loadAdminUsers() {
+
+    const tableBody = document.getElementById("adminUsersBody");
+
+    if (!tableBody) {
+
+        return;
+    }
+
+    const message = document.getElementById("adminMessage");
+
+    if (!isLoggedIn()) {
+
+        window.location.href = "/login";
+
+        return;
+    }
+
+    try {
+
+        const meResponse = await fetch("/api/auth/me", {
+            headers: getAuthHeaders()
+        });
+
+        if (meResponse.status === 401) {
+
+            logout();
+
+            return;
+        }
+
+        const me = await meResponse.json();
+
+        const response = await fetch("/api/admin/users", {
+            headers: getAuthHeaders()
+        });
+
+        if (response.status === 401) {
+
+            logout();
+
+            return;
+        }
+
+        if (response.status === 403) {
+
+            message.textContent = "Only admins can open this page.";
+
+            return;
+        }
+
+        if (!response.ok) {
+
+            message.textContent = "Could not load users.";
+
+            return;
+        }
+
+        const users = await response.json();
+
+        message.textContent = users.length + " registered users";
+
+        tableBody.innerHTML = "";
+
+        users.forEach(function (user) {
+
+            const row = document.createElement("tr");
+
+            [
+                user.id,
+                user.username,
+                user.email,
+                user.is_admin ? "Admin" : "User"
+            ].forEach(function (value) {
+
+                const cell = document.createElement("td");
+
+                cell.textContent = value;
+
+                row.appendChild(cell);
+            });
+
+            const actionCell = document.createElement("td");
+
+            // an admin cannot delete their own account (the server blocks it too)
+            if (user.id !== me.id) {
+
+                const button = document.createElement("button");
+
+                button.className = "delete-button";
+
+                button.textContent = "Delete";
+
+                button.addEventListener("click", function () {
+
+                    deleteUser(user.id, user.username);
+                });
+
+                actionCell.appendChild(button);
+            }
+
+            row.appendChild(actionCell);
+
+            tableBody.appendChild(row);
+        });
+
+    } catch (error) {
+
+        console.error("Load users error:", error);
+
+        message.textContent = "Unable to connect to the server.";
+    }
+}
+
+
+async function deleteUser(userId, username) {
+
+    const confirmed = confirm(
+        'Delete user "' + username + '" and ALL of their posts? This cannot be undone.'
+    );
+
+    if (!confirmed) {
+
+        return;
+    }
+
+    try {
+
+        const response = await fetch(
+            `/api/admin/users/${userId}`,
+            {
+                method: "DELETE",
+                headers: getAuthHeaders()
+            }
+        );
+
+        if (response.status === 401) {
+
+            logout();
+
+            return;
+        }
+
+        if (!response.ok) {
+
+            let errorMessage = "Could not delete the user.";
+
+            try {
+
+                const data = await response.json();
+
+                if (typeof data.detail === "string") {
+
+                    errorMessage = data.detail;
+                }
+
+            } catch (e) {
+                // server sent no JSON: keep the default message
+            }
+
+            alert(errorMessage);
+
+            return;
+        }
+
+        loadAdminUsers();
+
+    } catch (error) {
+
+        console.error("Delete user error:", error);
 
         alert("Unable to connect to the server.");
     }

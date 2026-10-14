@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from sqlalchemy import String, DateTime,Text
+from sqlalchemy import String, DateTime,Text,Boolean,false
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from database.database import Base
@@ -43,8 +43,15 @@ class User(Base):
     Text,
     nullable=True
    )
+    is_admin: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=False,
+        server_default=false()
+    )
 
     posts = relationship(
         "Post",
-        back_populates="author"
+        back_populates="author",
+        cascade="all, delete-orphan"
     )

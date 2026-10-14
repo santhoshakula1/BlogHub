@@ -17,17 +17,21 @@ from schemas import (
     PostUpdate,
     UserCreate,
     UserOut,
-    UserLogin
+    UserLogin,
+    AdminUserOut
+    
 )
 
 from utils.auth import (
     create_access_token,
-    get_current_user
+    get_current_user,
+    get_current_admin
 )
 
 from utils.password import (
     hash_password,
     verify_password
+    
 )
 
 
@@ -285,7 +289,7 @@ def delete_post(
             detail="Post not found"
         )
 
-    if post.author_id != current_user.id: 
+    if post.author_id != current_user.id and not current_user.is_admin:
 
         raise HTTPException(
             status_code=403,
@@ -301,9 +305,6 @@ def delete_post(
     }
 
 
-# =========================================================
-# AUTHENTICATION
-# =========================================================
 
 
 @app.post("/api/auth/register", response_model=UserOut)
@@ -349,6 +350,48 @@ def register_user(
         )
 
     return new_user
+@app.get("/admin")
+def admin_page(request: Request):
+
+    return templates.TemplateResponse(
+        request=request,
+        name="admin.html",
+        context={"request": request}
+    )
+@app.get("/api/admin/users", response_model=list[AdminUserOut])
+def list_users(
+    admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+
+    return db.query(User).order_by(User.id).all()
+
+
+@app.delete("/api/admin/users/{user_id}")
+def delete_user(
+    user_id: int,
+    admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+
+    if user_id == admin.id:
+
+        raise HTTPException(
+            status_code=400,
+            detail="Admins cannot delete their own account"
+        )
+
+    user = db.query(User).filter(User.id == user_id).first()
+
+    if not user:
+
+        raise HTTPException(status_code=404, detail="User not found")
+
+    db.delete(user)
+
+    db.commit()
+
+    return {"message": "User and their posts deleted successfully"}
 
 @app.post("/api/auth/login")
 def login_user( user_data: UserLogin, db: Session = Depends(get_db) ):
@@ -364,5 +407,5 @@ def login_user( user_data: UserLogin, db: Session = Depends(get_db) ):
 
 @app.get("/api/auth/me") 
 def get_me( current_user: User = Depends(get_current_user) ): 
-    return { "id": current_user.id, "username": current_user.username, "email": current_user.email, "created_at": current_user.created_at }
+    return { "id": current_user.id, "username": current_user.username, "email": current_user.email, "created_at": current_user.created_at ,"is_admin": current_user.is_admin }
 

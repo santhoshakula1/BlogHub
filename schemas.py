@@ -40,7 +40,14 @@ class UserOut(BaseModel):
     email: str
     created_at: datetime
     
+class AdminUserOut(BaseModel):
+    id: int
+    username: str
+    email: str
+    created_at: datetime | None = None
+    is_admin: bool
 
+    
 class PostOut(BaseModel):
     id: int
     title: str
