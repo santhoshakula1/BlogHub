@@ -1,7 +1,6 @@
 # BlogHub — Full-Stack Blog Platform
 
 
-
 A multi-user blogging web app where people can register, write posts, and manage their own content, with an **admin role** that can moderate posts and users. Built end to end: a **FastAPI** REST backend, a **PostgreSQL** database managed with **SQLAlchemy 2.0 + Alembic migrations**, and a responsive front end in **plain HTML, CSS and JavaScript** (no framework).
 
 <!--
@@ -18,7 +17,7 @@ A multi-user blogging web app where people can register, write posts, and manage
 **For readers and writers**
 - Register and log in with a username and password
 - Create, edit and delete your own blog posts
-- Home page with a card for every post (author and date shown); each post has its own page
+- Home page with a card for every post, newest first (author and date shown); each post has its own page
 - Profile page showing account details
 - Share a post by copying the link, WhatsApp or email
 - Dark mode (remembered between visits) and a layout that adapts to tablet and mobile
@@ -26,6 +25,7 @@ A multi-user blogging web app where people can register, write posts, and manage
 **Access control**
 - Only the **author** can edit a post. Only the **author or an admin** can delete it
 - Edit and Delete buttons are shown only to people allowed to use them, and the **server enforces the same rules**, so hiding a button is never the only protection
+- Usernames and emails are unique **regardless of capitalization**, so `Admin` and `admin` cannot both exist
 
 **Admin panel** (`/admin`)
 - Lists all registered users
@@ -44,7 +44,7 @@ A multi-user blogging web app where people can register, write posts, and manage
 | Validation | Pydantic v2 | Checks every request (title 1–100 characters, username 3–50, password 6+) and shapes every response |
 | Database | PostgreSQL + psycopg 3 | Stores users and posts |
 | ORM | SQLAlchemy 2.0 (typed `Mapped` models) | Tables as Python classes, one-to-many relationship, cascade delete |
-| Migrations | Alembic | Versioned schema changes (`bio`, `posts.created_at`, `users.is_admin`) |
+| Migrations | Alembic | Builds the whole schema from an empty database and versions every change (`bio`, `posts.created_at`, `users.is_admin`) |
 | Authentication | JWT (python-jose) | Stateless login tokens that expire (30 minutes by default) |
 | Password security | Argon2id (pwdlib) | Passwords are stored only as salted hashes |
 | Templates | Jinja2 | Serves the HTML pages |
@@ -60,9 +60,9 @@ A multi-user blogging web app where people can register, write posts, and manage
 | **REST API design** | 10 endpoints with correct status codes (200, 400, 401, 403, 404, 422) and typed request/response schemas in `main.py` and `schemas.py` |
 | **Authentication** | Login issues a signed JWT; a `get_current_user` dependency in `utils/auth.py` protects routes |
 | **Authorization (roles)** | Owner-only edit, owner-or-admin delete, admin-only user management through a reusable `get_current_admin` dependency |
-| **Database design** | Users → Posts one-to-many with a foreign key, unique and indexed columns, and ORM-level cascade delete |
-| **Schema migrations** | 4 Alembic revisions, including adding a `NOT NULL` column with a server default to a table that already contains rows |
-| **Security basics** | Argon2id password hashing, XSS-safe rendering (escaped HTML / `textContent`), secrets in `.env` and ignored by Git, startup fails fast if config is missing, privilege escalation blocked at sign-up |
+| **Database design** | Users → Posts one-to-many with a foreign key, unique and indexed columns, ORM-level cascade delete, and eager loading (`joinedload`) so the home page loads all authors in one query instead of one per post |
+| **Schema migrations** | 4 Alembic revisions that build the database from scratch (`alembic upgrade head`) and can be rolled back; includes adding a `NOT NULL` column with a server default to a table that already contains rows |
+| **Security basics** | Argon2id password hashing, XSS-safe rendering (escaped HTML / `textContent`), secrets in `.env` and ignored by Git, startup fails fast if config is missing, privilege escalation blocked at sign-up, look-alike duplicate accounts blocked |
 | **Front-end fundamentals** | A multi-page UI without a framework: authenticated API calls, role-based UI, dark mode, responsive breakpoints |
 | **Debugging & review** | Found and fixed a role-visibility bug (a Delete button shown to every visitor) while reviewing the delete feature |
 | **Git & GitHub** | Feature-by-feature commit history on GitHub |
@@ -135,6 +135,8 @@ Activate the virtual environment (Windows PowerShell: `venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 ```
 
+(Prefer [uv](https://docs.astral.sh/uv/)? Run `uv sync` instead.)
+
 **2. Create an empty database** (with `psql` or pgAdmin)
 
 ```sql
@@ -158,11 +160,10 @@ Generate a strong secret key with:
 python -c "import secrets; print(secrets.token_hex(32))"
 ```
 
-**4. Create the tables and record the migration state**
+**4. Create the tables**
 
 ```bash
-python -c "from database.database import Base, engine; import models.user, models.post; Base.metadata.create_all(engine)"
-alembic stamp head
+alembic upgrade head
 ```
 
 **5. Start the app**
@@ -187,7 +188,7 @@ Refresh the site: an **Admin** link appears in the home page navbar.
 
 ## Database migrations
 
-The initial `users` and `posts` tables are created from the models (step 4 above). From then on, Alembic tracks every schema change. After editing a model:
+Alembic builds the entire schema from an empty database (step 4 above) and tracks every later change. After editing a model:
 
 ```bash
 alembic revision --autogenerate -m "describe the change"
@@ -201,8 +202,8 @@ alembic upgrade head
 Ideas for taking the project further:
 
 - [ ] Automated tests with `pytest` and a CI workflow
-- [ ] Pagination and newest-first ordering on the home page
-- [ ] Case-insensitive unique usernames and proper email validation
+- [ ] Pagination on the home page
+- [ ] Proper email format validation
 - [ ] Docker setup and a live deployment
 - [ ] Comments, likes and post categories
 
@@ -212,4 +213,3 @@ Ideas for taking the project further:
 
 **Santhosh** · [GitHub: @santhoshakula1](https://github.com/santhoshakula1)
 
-<!-- Add your LinkedIn and/or email here so recruiters can reach you. -->
