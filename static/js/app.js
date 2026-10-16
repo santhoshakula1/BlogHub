@@ -812,6 +812,27 @@ async function showEditButton(authorId) {
     }
 }
 
+// Reads the error text from a failed response. If the server sent plain
+// text (e.g. a crash), falls back to the message you give it.
+async function readError(response, fallback) {
+
+    try {
+
+        const data = await response.json();
+
+        if (typeof data.detail === "string") {
+
+            return data.detail;
+        }
+
+    } catch (e) {
+        // not JSON: use the fallback
+    }
+
+    return fallback;
+}
+
+
 async function deletePost() {
 
     const confirmed = confirm(
@@ -848,12 +869,8 @@ async function deletePost() {
 
         if (!response.ok) {
 
-            const data = await response.json();
-
             alert(
-                typeof data.detail === "string"
-                    ? data.detail
-                    : "Could not delete the post."
+                await readError(response, "Could not delete the post.")
             );
 
             return;

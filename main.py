@@ -4,7 +4,8 @@ from fastapi import FastAPI, HTTPException, Request, Depends
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 
-from sqlalchemy.orm import Session
+from sqlalchemy import func
+from sqlalchemy.orm import Session, joinedload
 
 from database.database import get_db, engine, Base
 
@@ -165,7 +166,12 @@ def get_posts(
     db: Session = Depends(get_db)
 ):
 
-    posts = db.query(Post).all()
+    posts = (
+        db.query(Post)
+        .options(joinedload(Post.author))
+        .order_by(Post.created_at.desc(), Post.id.desc())
+        .all()
+    )
 
     return posts
 
@@ -314,8 +320,8 @@ def register_user(
 ):
 
     existing_user = db.query(User).filter(
-        (User.username == user_data.username) |
-        (User.email == user_data.email)
+        (func.lower(User.username) == user_data.username.lower()) |
+        (func.lower(User.email) == user_data.email.lower())
     ).first()
 
     if existing_user:

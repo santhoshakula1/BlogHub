@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field,ConfigDict
+from pydantic import BaseModel, Field, ConfigDict, field_validator
 from datetime import datetime
 
 
@@ -28,7 +28,21 @@ class UserCreate(BaseModel):
     username: str = Field(..., min_length=3, max_length=50)
     email: str = Field(..., min_length=5, max_length=100)
     password: str = Field(..., min_length=6)
-    
+
+    @field_validator("username")
+    @classmethod
+    def clean_username(cls, value):
+        value = value.strip()
+        if len(value) < 3:
+            raise ValueError("Username must be at least 3 characters")
+        return value
+
+    @field_validator("email")
+    @classmethod
+    def clean_email(cls, value):
+        return value.strip().lower()
+
+
 class UserLogin(BaseModel):
     username: str
     password: str
