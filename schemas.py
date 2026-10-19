@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, ConfigDict, field_validator
+from pydantic import BaseModel, EmailStr, Field, ConfigDict, field_validator
 from datetime import datetime
 
 
@@ -26,7 +26,7 @@ class AuthorOut(BaseModel):
         
 class UserCreate(BaseModel):
     username: str = Field(..., min_length=3, max_length=50)
-    email: str = Field(..., min_length=5, max_length=100)
+    email: EmailStr
     password: str = Field(..., min_length=6)
 
     @field_validator("username")

@@ -3,13 +3,6 @@
 
 A multi-user blogging web app where people can register, write posts, and manage their own content, with an **admin role** that can moderate posts and users. Built end to end: a **FastAPI** REST backend, a **PostgreSQL** database managed with **SQLAlchemy 2.0 + Alembic migrations**, and a responsive front end in **plain HTML, CSS and JavaScript** (no framework).
 
-<!--
-  Add 2–3 screenshots here, they help a lot. Save the images in a docs/screenshots/ folder, then:
-  ![Home page](docs/screenshots/home.png)
-  ![Blog post with owner buttons](docs/screenshots/post.png)
-  ![Admin panel](docs/screenshots/admin.png)
--->
-
 ---
 
 ## Features

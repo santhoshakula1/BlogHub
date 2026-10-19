@@ -88,7 +88,30 @@ if (loginForm) {
 
     });
 }
+function readRegisterError(data) {
 
+    if (data && typeof data.detail === "string") {
+        return data.detail;
+    }
+
+    if (data && Array.isArray(data.detail) && data.detail.length > 0) {
+
+        const first = data.detail[0];
+        const field = first.loc ? first.loc[first.loc.length - 1] : "";
+
+        if (field === "email") {
+            return "Please enter a valid email address, like name@example.com.";
+        }
+        if (field === "username") {
+            return "Username must be 3 to 50 characters.";
+        }
+        if (field === "password") {
+            return "Password must be at least 6 characters.";
+        }
+    }
+
+    return "Registration failed. Please check your details.";
+}
 const registerForm = document.getElementById("registerForm");
 
 if (registerForm) {
@@ -134,9 +157,7 @@ if (registerForm) {
 
             if (!response.ok) {
 
-                message.textContent =
-                    data.detail ||
-                    "Registration failed.";
+                message.textContent =readRegisterError(data);
 
                 return;
             }
