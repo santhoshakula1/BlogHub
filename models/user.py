@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from sqlalchemy import String, DateTime,Text,Boolean,false
+from sqlalchemy import String, DateTime,Text,Boolean,false,Index,func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from database.database import Base
@@ -55,3 +55,7 @@ class User(Base):
         back_populates="author",
         cascade="all, delete-orphan"
     )
+    
+
+Index("uq_users_username_lower", func.lower(User.username), unique=True)
+Index("uq_users_email_lower", func.lower(User.email), unique=True)

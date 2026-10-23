@@ -37,7 +37,7 @@ class UserCreate(BaseModel):
             raise ValueError("Username must be at least 3 characters")
         return value
 
-    @field_validator("email")
+    @field_validator("email",mode="before")
     @classmethod
     def clean_email(cls, value):
         return value.strip().lower()

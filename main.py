@@ -5,6 +5,7 @@ from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 
 from sqlalchemy import func
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, joinedload
 
 from database.database import get_db, engine, Base
@@ -343,6 +344,13 @@ def register_user(
         db.commit()
 
         db.refresh(new_user)
+        
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=400,
+            detail="Username or email already exists"
+        )
 
     except Exception as e:
 
