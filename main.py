@@ -445,7 +445,7 @@ def delete_user(
 @app.post("/api/auth/login")
 @limiter.limit("5/minute")
 def login_user( request: Request, user_data: UserLogin, db: Session = Depends(get_db) ):
-    user = db.query(User).filter( User.username == user_data.username ).first() 
+    user = db.query(User).filter( func.lower(User.username) == user_data.username.strip().lower() ).first()
     if not user: 
         raise HTTPException(status_code=401, detail="Invalid username or password" ) 
     password_valid = verify_password( user_data.password, user.password_hash ) 
