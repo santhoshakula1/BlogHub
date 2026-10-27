@@ -26,7 +26,11 @@
             <input
                 type="text"
                 id="username"
-                placeholder="Username"
+                placeholder="Username (letters, numbers, _)"
+                minlength="3"
+                maxlength="30"
+                pattern="[A-Za-z0-9_]+"
+                title="3 to 30 characters: letters, numbers and underscores only"
                 required
             >
 
@@ -40,7 +44,9 @@
             <input
                 type="password"
                 id="password"
-                placeholder="Password"
+                placeholder="Password (at least 8 characters)"
+                minlength="8"
+                maxlength="128"
                 required
             >
 

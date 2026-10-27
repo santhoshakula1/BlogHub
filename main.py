@@ -1,12 +1,16 @@
+import os
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException, Request, Depends
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
-
+from slowapi import Limiter
+from slowapi.errors import RateLimitExceeded
+from slowapi.util import get_remote_address
 from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, joinedload
+from starlette.responses import JSONResponse
 
 from database.database import get_db, engine, Base
 
@@ -43,13 +47,26 @@ async def lifespan(app: FastAPI):
     
 
     yield
-
-
+limiter = Limiter(
+    key_func=get_remote_address,
+    enabled=os.getenv("RATE_LIMIT_ENABLED", "true").lower() != "false"
+)
 app = FastAPI(
     lifespan=lifespan
 )
+app.state.limiter = limiter
 
 
+@app.exception_handler(RateLimitExceeded)
+async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
+
+    return JSONResponse(
+        status_code=429,
+        content={
+            "detail": "Too many attempts. Please wait a minute and try again."
+        },
+        headers={"Retry-After": "60"}
+    )
 app.mount(
     "/static",
     StaticFiles(directory="static"),
@@ -408,7 +425,8 @@ def delete_user(
     return {"message": "User and their posts deleted successfully"}
 
 @app.post("/api/auth/login")
-def login_user( user_data: UserLogin, db: Session = Depends(get_db) ):
+@limiter.limit("5/minute")
+def login_user( request: Request, user_data: UserLogin, db: Session = Depends(get_db) ):
     user = db.query(User).filter( User.username == user_data.username ).first() 
     if not user: 
         raise HTTPException(status_code=401, detail="Invalid username or password" ) 

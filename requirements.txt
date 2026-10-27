@@ -35,3 +35,8 @@ tzdata==2026.4
 uvicorn==0.53.0
 dnspython==2.9.0
 email-validator==2.3.0
+Deprecated==3.0.0
+limits==5.8.0
+packaging==26.3
+slowapi==0.1.10
+wrapt==2.5.1

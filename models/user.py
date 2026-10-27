@@ -35,7 +35,7 @@ class User(Base):
     )
 
     created_at: Mapped[datetime | None] = mapped_column(
-    DateTime,
+    DateTime(timezone=True),
     nullable=True,
     default=lambda: datetime.now(timezone.utc)
     )

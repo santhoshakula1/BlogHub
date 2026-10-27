@@ -103,10 +103,10 @@ function readRegisterError(data) {
             return "Please enter a valid email address, like name@example.com.";
         }
         if (field === "username") {
-            return "Username must be 3 to 50 characters.";
+            return "Username must be 3 to 30 characters: letters, numbers and underscores only.";
         }
         if (field === "password") {
-            return "Password must be at least 6 characters.";
+            return "Password must be 8 to 128 characters and not a very common password.";
         }
     }
 
@@ -333,11 +333,10 @@ async function loadProfile() {
         emailElement.textContent =
             data.email;
 
-        createdElement.textContent =
-            new Date(
-                data.created_at
-            ).toLocaleString();
-
+            createdElement.textContent =
+            data.created_at
+                ? new Date(data.created_at).toLocaleString()
+                : "Unknown";
     } catch (error) {
 
         console.error(
@@ -427,8 +426,7 @@ async function createPost() {
             message.textContent =
                 typeof data.detail === "string"
                     ? data.detail
-                    : "please check your title(max 100 characters) and content.";
-
+                    : "Please check your title (max 100 characters) and content (max 20,000 characters).";
             return;
         }
 
@@ -773,13 +771,13 @@ async function updatePost() {
         return;
     }
 
-    if (!response.ok) {
+    if (response.status === 422) {
 
-        message.textContent = "Could not update post.";
+        message.textContent =
+            "Please check your title (max 100 characters) and content (max 20,000 characters).";
 
         return;
     }
-
     window.location.href = "/blog/" + getPostId();
 }
 
