@@ -2,16 +2,23 @@ import logging
 import os
 from contextlib import asynccontextmanager
 from pathlib import Path
-from fastapi import FastAPI, HTTPException, Request, Depends
+from fastapi import FastAPI, HTTPException, Request, Depends, Query
+from fastapi.exception_handlers import (
+    http_exception_handler,
+    request_validation_exception_handler
+)
+from fastapi.exceptions import RequestValidationError
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
+
 from slowapi import Limiter
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.orm import Session
 from starlette.responses import JSONResponse
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from database.database import get_db, engine, Base
 
@@ -20,6 +27,7 @@ from models.user import User
 
 from schemas import (
     PostCreate,
+    PostListOut,
     PostOut,
     PostUpdate,
     UserCreate,
@@ -87,6 +95,58 @@ app.mount(
 templates = Jinja2Templates(
     directory=BASE_DIR / "templates"
 )
+# =========================================================
+# 404 PAGE
+# =========================================================
+# Wrong web addresses get a friendly page. The API (/api/...) and static
+# files keep returning short JSON/plain errors, because they are read by
+# programs, not by people.
+
+
+def is_page_request(request: Request) -> bool:
+
+    path = request.url.path
+
+    return not (
+        path.startswith("/api/") or path.startswith("/static/")
+    )
+
+
+def not_found_page(request: Request):
+
+    return templates.TemplateResponse(
+        request=request,
+        name="404.html",
+        context={"request": request},
+        status_code=404
+    )
+
+
+@app.exception_handler(StarletteHTTPException)
+async def custom_http_exception_handler(
+    request: Request,
+    exc: StarletteHTTPException
+):
+
+    if exc.status_code == 404 and is_page_request(request):
+
+        return not_found_page(request)
+
+    return await http_exception_handler(request, exc)
+
+
+@app.exception_handler(RequestValidationError)
+async def custom_validation_handler(
+    request: Request,
+    exc: RequestValidationError
+):
+
+    # on a page address such as /blog/abc this means "no such page"
+    if is_page_request(request):
+
+        return not_found_page(request)
+
+    return await request_validation_exception_handler(request, exc)
 
 
 # =========================================================
@@ -186,22 +246,57 @@ def blog_page(
 # =========================================================
 
 
+EXCERPT_LENGTH = 200
+
+
+def make_excerpt(text: str) -> str:
+
+    if len(text) > EXCERPT_LENGTH:
+
+        return text[:EXCERPT_LENGTH].rstrip() + "…"
+
+    return text
+
+
 @app.get(
     "/api/posts",
-    response_model=list[PostOut]
+    response_model=list[PostListOut]
 )
 def get_posts(
+    limit: int = Query(10, ge=1, le=50),
+    offset: int = Query(0, ge=0),
     db: Session = Depends(get_db)
 ):
 
-    posts = (
-        db.query(Post)
-        .options(joinedload(Post.author))
+    # The database sends back only the first 201 characters of each post,
+    # not the whole text, and only one "page" of posts at a time.
+    rows = (
+        db.query(
+            Post.id,
+            Post.title,
+            func.substr(Post.content, 1, EXCERPT_LENGTH + 1).label("preview"),
+            Post.author_id,
+            Post.created_at,
+            User.username
+        )
+        .join(User, User.id == Post.author_id)
         .order_by(Post.created_at.desc(), Post.id.desc())
+        .limit(limit)
+        .offset(offset)
         .all()
     )
 
-    return posts
+    return [
+        {
+            "id": row.id,
+            "title": row.title,
+            "excerpt": make_excerpt(row.preview),
+            "author_id": row.author_id,
+            "author": {"username": row.username},
+            "created_at": row.created_at
+        }
+        for row in rows
+    ]
 
 
 @app.get(

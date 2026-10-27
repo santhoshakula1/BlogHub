@@ -1,9 +1,94 @@
+// =========================================================
+// DRAFT: keeps the post you are writing safe
+// =========================================================
+
+const DRAFT_KEY = "bloghub_new_post_draft";
+const NOTICE_KEY = "bloghub_login_notice";
+
+
+function saveDraft(title, content) {
+
+    try {
+
+        if (!title && !content) {
+
+            localStorage.removeItem(DRAFT_KEY);
+
+            return;
+        }
+
+        localStorage.setItem(
+            DRAFT_KEY,
+            JSON.stringify({ title: title, content: content })
+        );
+
+    } catch (error) {
+        // browser storage is unavailable: the draft is simply not saved
+    }
+}
+
+
+function readDraft() {
+
+    try {
+
+        const raw = localStorage.getItem(DRAFT_KEY);
+
+        if (!raw) {
+
+            return null;
+        }
+
+        const draft = JSON.parse(raw);
+
+        if (draft && (draft.title || draft.content)) {
+
+            return draft;
+        }
+
+    } catch (error) {
+        // unreadable draft: ignore it
+    }
+
+    return null;
+}
+
+
+function clearDraft() {
+
+    try {
+
+        localStorage.removeItem(DRAFT_KEY);
+
+    } catch (error) {
+        // nothing to do
+    }
+}
 const loginForm = document.getElementById("loginForm");
 
 if (loginForm) {
 
-    loginForm.addEventListener("submit", async function (event) {
+    // Sent here because the session expired while writing a post?
+    let resumeDraft = false;
 
+    try {
+
+        const notice = sessionStorage.getItem(NOTICE_KEY);
+
+        if (notice) {
+
+            document.getElementById("loginMessage").textContent = notice;
+
+            sessionStorage.removeItem(NOTICE_KEY);
+
+            resumeDraft = true;
+        }
+
+    } catch (error) {
+        // storage unavailable: no notice
+    }
+
+    loginForm.addEventListener("submit", async function (event) {
         event.preventDefault();
 
         const username =
@@ -68,13 +153,14 @@ if (loginForm) {
             message.textContent =
                 "Login successful!";
 
-            setTimeout(function () {
+                        setTimeout(function () {
 
                 window.location.href =
-                    "/profile";
+                    (resumeDraft && readDraft())
+                        ? "/new-post"
+                        : "/profile";
 
             }, 500);
-
         } catch (error) {
 
             console.error(
@@ -214,7 +300,7 @@ function getAuthHeaders() {
 }
 
 
-function logout() {
+function logout(keepDraft) {
 
     localStorage.removeItem(
         "access_token"
@@ -223,6 +309,12 @@ function logout() {
     localStorage.removeItem(
         "token_type"
     );
+
+    
+    if (!keepDraft) {
+
+        clearDraft();
+    }
 
     window.location.href =
         "/login";
@@ -305,10 +397,9 @@ async function loadProfile() {
                 }
             );
 
-        const data =
-            await response.json();
-
-        if (!response.ok) {
+               // 401 = the token is missing, expired or invalid: log out.
+        // Any other failure (server error, outage) must NOT log the user out.
+        if (response.status === 401) {
 
             localStorage.removeItem(
                 "access_token"
@@ -324,9 +415,22 @@ async function loadProfile() {
             return;
         }
 
+        if (!response.ok) {
+
+            if (messageElement) {
+
+                messageElement.textContent =
+                    "Something went wrong. Please try again.";
+            }
+
+            return;
+        }
+
+        const data =
+            await response.json();
+
         idElement.textContent =
             data.id;
-
         usernameElement.textContent =
             data.username;
 
@@ -351,6 +455,42 @@ async function loadProfile() {
         }
     }
 }
+
+// New Post page: restore a saved draft and save while typing
+document.addEventListener("DOMContentLoaded", function () {
+
+    if (window.location.pathname !== "/new-post") {
+
+        return;
+    }
+
+    const titleInput = document.getElementById("title");
+
+    const contentInput = document.getElementById("content");
+
+    if (!titleInput || !contentInput) {
+
+        return;
+    }
+
+    const draft = readDraft();
+
+    if (draft) {
+
+        titleInput.value = draft.title || "";
+
+        contentInput.value = draft.content || "";
+    }
+
+    function autoSave() {
+
+        saveDraft(titleInput.value, contentInput.value);
+    }
+
+    titleInput.addEventListener("input", autoSave);
+
+    contentInput.addEventListener("input", autoSave);
+});
 
 
 async function createPost() {
@@ -418,7 +558,21 @@ async function createPost() {
 
             if (response.status === 401) {
 
-                logout();
+                // the session expired: keep the draft, ask for a new login
+                saveDraft(title, content);
+
+                try {
+
+                    sessionStorage.setItem(
+                        NOTICE_KEY,
+                        "Your session expired. Log in again and your post will be waiting for you."
+                    );
+
+                } catch (error) {
+                    // storage unavailable: no notice
+                }
+
+                logout(true);
 
                 return;
             }
@@ -429,6 +583,8 @@ async function createPost() {
                     : "Please check your title (max 100 characters) and content (max 20,000 characters).";
             return;
         }
+
+        clearDraft();
 
         message.textContent =
             "Post created successfully!";
@@ -452,7 +608,12 @@ async function createPost() {
 }
 
 
-async function loadPosts() {
+const PAGE_SIZE = 10;
+
+let postsShown = 0;
+
+
+async function loadPosts(loadMore) {
 
     const postsContainer =
         document.getElementById(
@@ -464,11 +625,27 @@ async function loadPosts() {
         return;
     }
 
+    const moreButton =
+        document.getElementById(
+            "loadMoreButton"
+        );
+
+    // first load starts at 0; "Load more" continues after the posts shown
+    const offset = loadMore ? postsShown : 0;
+
+    if (loadMore && moreButton) {
+
+        moreButton.disabled = true;
+
+        moreButton.textContent = "Loading...";
+    }
+
     try {
 
+        // Ask for ONE more than we show. If it arrives, another page exists.
         const response =
             await fetch(
-                "/api/posts"
+                `/api/posts?limit=${PAGE_SIZE + 1}&offset=${offset}`
             );
 
         const posts =
@@ -481,17 +658,31 @@ async function loadPosts() {
             );
         }
 
-        if (!posts.length) {
+        const hasMore = posts.length > PAGE_SIZE;
 
-            postsContainer.innerHTML =
-                "<p>No blog posts available.</p>";
+        const pagePosts = posts.slice(0, PAGE_SIZE);
 
-            return;
+        if (!loadMore) {
+
+            if (!pagePosts.length) {
+
+                postsContainer.innerHTML =
+                    "<p>No blog posts available.</p>";
+
+                if (moreButton) {
+
+                    moreButton.style.display = "none";
+                }
+
+                return;
+            }
+
+            postsContainer.innerHTML = "";
+
+            postsShown = 0;
         }
 
-        postsContainer.innerHTML = "";
-
-        posts.forEach(function (post) {
+        pagePosts.forEach(function (post) {
 
             const card =
                 document.createElement(
@@ -509,7 +700,7 @@ async function loadPosts() {
                     </h3>
 
                     <p class="blog-description">
-                        ${escapeHTML(post.content)}
+                        ${escapeHTML(post.excerpt)}
                     </p>
 
                     <p class="blog-author">
@@ -530,6 +721,18 @@ async function loadPosts() {
             postsContainer.appendChild(card);
         });
 
+        postsShown += pagePosts.length;
+
+        if (moreButton) {
+
+            moreButton.disabled = false;
+
+            moreButton.textContent = "Load more posts";
+
+            moreButton.style.display =
+                hasMore ? "inline-block" : "none";
+        }
+
     } catch (error) {
 
         console.error(
@@ -537,8 +740,22 @@ async function loadPosts() {
             error
         );
 
-        postsContainer.innerHTML =
-            "<p>Unable to load blog posts.</p>";
+        if (loadMore) {
+
+            // keep the posts already on screen, let the user try again
+            if (moreButton) {
+
+                moreButton.disabled = false;
+
+                moreButton.textContent =
+                    "Could not load more. Try again";
+            }
+
+        } else {
+
+            postsContainer.innerHTML =
+                "<p>Unable to load blog posts.</p>";
+        }
     }
 }
 function formatDate(value) {

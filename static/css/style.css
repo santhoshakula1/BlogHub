@@ -512,3 +512,18 @@ body.dark .admin-message {
         width: 92%;
     }
 }
+/* 404 page */
+.not-found {
+    text-align: center;
+}
+
+.not-found-code {
+    font-size: 72px;
+    font-weight: bold;
+    margin: 0;
+}
+
+.not-found .hero-button {
+    display: inline-block;
+    margin-top: 20px;
+}

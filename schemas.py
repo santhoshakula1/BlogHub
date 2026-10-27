@@ -93,6 +93,13 @@ class AdminUserOut(BaseModel):
     created_at: datetime | None = None
     is_admin: bool
 
+class PostListOut(BaseModel):
+    id: int
+    title: str
+    excerpt: str
+    author_id: int
+    author: AuthorOut
+    created_at: datetime
     
 class PostOut(BaseModel):
     id: int
