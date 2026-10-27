@@ -1,6 +1,6 @@
 import os
 from contextlib import asynccontextmanager
-
+from pathlib import Path
 from fastapi import FastAPI, HTTPException, Request, Depends
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
@@ -47,6 +47,9 @@ async def lifespan(app: FastAPI):
     
 
     yield
+# The folder that contains main.py, so the app works no matter which
+# folder you start it from.
+BASE_DIR = Path(__file__).resolve().parent
 limiter = Limiter(
     key_func=get_remote_address,
     enabled=os.getenv("RATE_LIMIT_ENABLED", "true").lower() != "false"
@@ -69,13 +72,13 @@ async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
     )
 app.mount(
     "/static",
-    StaticFiles(directory="static"),
+    StaticFiles(directory=BASE_DIR / "static"),
     name="static"
 )
 
 
 templates = Jinja2Templates(
-    directory="templates"
+    directory=BASE_DIR / "templates"
 )
 
 
