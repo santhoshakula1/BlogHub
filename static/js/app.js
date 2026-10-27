@@ -1031,7 +1031,8 @@ async function loadAdminUsers() {
             const actionCell = document.createElement("td");
 
             // an admin cannot delete their own account (the server blocks it too)
-            if (user.id !== me.id) {
+                        // admin accounts are protected (the server blocks deleting them too)
+            if (!user.is_admin) {
 
                 const button = document.createElement("button");
 
@@ -1045,6 +1046,10 @@ async function loadAdminUsers() {
                 });
 
                 actionCell.appendChild(button);
+
+            } else {
+
+                actionCell.textContent = "Protected";
             }
 
             row.appendChild(actionCell);
