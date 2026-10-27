@@ -1,3 +1,4 @@
+import logging
 import os
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -47,6 +48,12 @@ async def lifespan(app: FastAPI):
     
 
     yield
+    
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(name)s: %(message)s"
+)
+logger = logging.getLogger(__name__)
 # The folder that contains main.py, so the app works no matter which
 # folder you start it from.
 BASE_DIR = Path(__file__).resolve().parent
@@ -248,6 +255,8 @@ def create_post(
 
         db.rollback()
 
+        logger.exception("Could not save post")
+
         raise HTTPException(
             status_code=500,
             detail="Could not save post"
@@ -372,12 +381,11 @@ def register_user(
             detail="Username or email already exists"
         )
 
-    except Exception as e:
+    except Exception:
 
         db.rollback()
 
-        print("DATABASE ERROR:", e)
-
+        logger.exception("Could not create user")
         raise HTTPException(
             status_code=500,
             detail="Could not create user"

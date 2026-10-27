@@ -11,7 +11,8 @@ if not DATABASE_URL:
     raise RuntimeError("DATABASE_URL is not configured")
 
 engine = create_engine(
-    DATABASE_URL
+    DATABASE_URL,
+    hide_parameters=True
 )
 
 
