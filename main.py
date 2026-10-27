@@ -1,5 +1,6 @@
 import logging
 import os
+import time
 from contextlib import asynccontextmanager
 from pathlib import Path
 from fastapi import FastAPI, HTTPException, Request, Depends, Query
@@ -78,12 +79,28 @@ app.state.limiter = limiter
 @app.exception_handler(RateLimitExceeded)
 async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
 
+    # How long until this visitor may try again? Ask the limiter.
+    # (If that fails for any reason, fall back to one minute.)
+    retry_after = 60
+
+    try:
+
+        limit_item, args = request.state.view_rate_limit
+
+        reset_time, _ = limiter.limiter.get_window_stats(limit_item, *args)
+
+        retry_after = max(1, int(reset_time - time.time()))
+
+    except Exception:
+
+        pass
+
     return JSONResponse(
         status_code=429,
         content={
-            "detail": "Too many attempts. Please wait a minute and try again."
+            "detail": "Too many attempts. Please wait a while and try again."
         },
-        headers={"Retry-After": "60"}
+        headers={"Retry-After": str(retry_after)}
     )
 app.mount(
     "/static",
@@ -326,7 +343,9 @@ def get_post(
     "/api/posts",
     response_model=PostOut
 )
+@limiter.limit("30/hour")
 def create_post(
+    request: Request,
     post: PostCreate,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
@@ -439,7 +458,9 @@ def delete_post(
 
 
 @app.post("/api/auth/register", response_model=UserOut)
+@limiter.limit("10/hour")
 def register_user(
+    request: Request,
     user_data: UserCreate,
     db: Session = Depends(get_db)
 ):
