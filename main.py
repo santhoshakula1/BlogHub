@@ -76,11 +76,37 @@ app = FastAPI(
 app.state.limiter = limiter
 
 
+
+@app.middleware("http")
+async def add_security_headers(request: Request, call_next):
+
+    response = await call_next(request)
+
+   
+    response.headers["X-Content-Type-Options"] = "nosniff"
+
+    
+    response.headers["X-Frame-Options"] = "DENY"
+
+    
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+
+    
+    response.headers["Permissions-Policy"] = (
+        "camera=(), microphone=(), geolocation=()"
+    )
+
+    
+    if request.url.scheme == "https":
+
+        response.headers["Strict-Transport-Security"] = "max-age=15552000"
+
+    return response
+
 @app.exception_handler(RateLimitExceeded)
 async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
 
-    # How long until this visitor may try again? Ask the limiter.
-    # (If that fails for any reason, fall back to one minute.)
+    
     retry_after = 60
 
     try:
@@ -112,12 +138,7 @@ app.mount(
 templates = Jinja2Templates(
     directory=BASE_DIR / "templates"
 )
-# =========================================================
-# 404 PAGE
-# =========================================================
-# Wrong web addresses get a friendly page. The API (/api/...) and static
-# files keep returning short JSON/plain errors, because they are read by
-# programs, not by people.
+
 
 
 def is_page_request(request: Request) -> bool:
@@ -158,7 +179,7 @@ async def custom_validation_handler(
     exc: RequestValidationError
 ):
 
-    # on a page address such as /blog/abc this means "no such page"
+    
     if is_page_request(request):
 
         return not_found_page(request)
@@ -285,8 +306,7 @@ def get_posts(
     db: Session = Depends(get_db)
 ):
 
-    # The database sends back only the first 201 characters of each post,
-    # not the whole text, and only one "page" of posts at a time.
+    
     rows = (
         db.query(
             Post.id,

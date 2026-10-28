@@ -64,6 +64,22 @@ function clearDraft() {
         // nothing to do
     }
 }
+
+async function readJson(response) {
+
+    try {
+
+        return await response.json();
+
+    } catch (error) {
+
+        return {};
+    }
+}
+
+
+const SERVER_PROBLEM_MESSAGE =
+    "Something went wrong on our side. Please try again in a moment.";
 const loginForm = document.getElementById("loginForm");
 
 if (loginForm) {
@@ -129,13 +145,23 @@ if (loginForm) {
                 }
             );
 
-            const data = await response.json();
+                        const data = await readJson(response);
 
             if (!response.ok) {
 
-                message.textContent =
-                    data.detail ||
-                    "Invalid username or password.";
+                if (typeof data.detail === "string") {
+
+                    message.textContent = data.detail;
+
+                } else if (response.status >= 500) {
+
+                    message.textContent = SERVER_PROBLEM_MESSAGE;
+
+                } else {
+
+                    message.textContent =
+                        "Login failed. Please check your details.";
+                }
 
                 return;
             }
@@ -174,7 +200,7 @@ if (loginForm) {
 
     });
 }
-function readRegisterError(data) {
+function readRegisterError(data, status) {
 
     if (data && typeof data.detail === "string") {
         return data.detail;
@@ -194,6 +220,11 @@ function readRegisterError(data) {
         if (field === "password") {
             return "Password must be 8 to 128 characters and not a very common password.";
         }
+    }
+
+        if (status >= 500) {
+
+        return SERVER_PROBLEM_MESSAGE;
     }
 
     return "Registration failed. Please check your details.";
@@ -239,19 +270,26 @@ if (registerForm) {
                 }
             );
 
-            const data = await response.json();
+                        const data = await readJson(response);
 
             if (!response.ok) {
 
-                message.textContent =readRegisterError(data);
+                message.textContent =
+                    readRegisterError(data, response.status);
 
                 return;
             }
 
             message.textContent =
-                "Registration successful!";
+                "Registration successful! Taking you to the login page...";
 
             registerForm.reset();
+
+            setTimeout(function () {
+
+                window.location.href = "/login";
+
+            }, 1500);
 
         } catch (error) {
 
@@ -464,6 +502,13 @@ document.addEventListener("DOMContentLoaded", function () {
         return;
     }
 
+    
+    if (!isLoggedIn()) {
+
+        window.location.href = "/login";
+
+        return;
+    }
     const titleInput = document.getElementById("title");
 
     const contentInput = document.getElementById("content");
@@ -552,7 +597,7 @@ async function createPost() {
             );
 
         const data =
-            await response.json();
+            await readJson(response);
 
         if (!response.ok) {
 
@@ -577,10 +622,20 @@ async function createPost() {
                 return;
             }
 
-            message.textContent =
-                typeof data.detail === "string"
-                    ? data.detail
-                    : "Please check your title (max 100 characters) and content (max 20,000 characters).";
+            if (typeof data.detail === "string") {
+
+                message.textContent = data.detail;
+
+            } else if (response.status >= 500) {
+
+                message.textContent = SERVER_PROBLEM_MESSAGE;
+
+            } else {
+
+                message.textContent =
+                    "Please check your title (max 100 characters) and content (max 20,000 characters).";
+            }
+
             return;
         }
 
