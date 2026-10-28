@@ -927,20 +927,38 @@ async function loadPostForEdit() {
         return;
     }
 
-    const response = await fetch("/api/posts/" + getPostId());
+    const message = document.getElementById("message");
 
-    if (!response.ok) {
+    try {
 
-        document.getElementById("message").textContent = "Post not found.";
+        const response = await fetch("/api/posts/" + getPostId());
 
-        return;
+        if (response.status === 404) {
+
+            message.textContent = "Post not found.";
+
+            return;
+        }
+
+        if (!response.ok) {
+
+            message.textContent = "Could not load the post. Please try again.";
+
+            return;
+        }
+
+        const post = await response.json();
+
+        document.getElementById("title").value = post.title;
+
+        document.getElementById("content").value = post.content;
+
+    } catch (error) {
+
+        console.error("Load post error:", error);
+
+        message.textContent = "Unable to connect to the server.";
     }
-
-    const post = await response.json();
-
-    document.getElementById("title").value = post.title;
-
-    document.getElementById("content").value = post.content;
 }
 
 
@@ -959,46 +977,73 @@ async function updatePost() {
         return;
     }
 
-    const response = await fetch("/api/posts/" + getPostId(), {
+    message.textContent = "Saving...";
 
-        method: "PUT",
+    try {
 
-        headers: {
-            "Content-Type": "application/json",
-            ...getAuthHeaders()
-        },
+        const response = await fetch("/api/posts/" + getPostId(), {
 
-        body: JSON.stringify({
-            title: title,
-            content: content
-        })
-    });
+            method: "PUT",
 
-    if (response.status === 401) {
+            headers: {
+                "Content-Type": "application/json",
+                ...getAuthHeaders()
+            },
 
-        logout();
+            body: JSON.stringify({
+                title: title,
+                content: content
+            })
+        });
 
-        return;
+        if (response.status === 401) {
+
+            logout();
+
+            return;
+        }
+
+        if (response.status === 403) {
+
+            message.textContent = "You can only edit your own posts.";
+
+            return;
+        }
+
+        if (response.status === 404) {
+
+            message.textContent = "This post no longer exists.";
+
+            return;
+        }
+
+        if (response.status === 422) {
+
+            message.textContent =
+                "Please check your title (max 100 characters) and content (max 20,000 characters).";
+
+            return;
+        }
+
+        // Anything else that is not a success (a server error, for example)
+        // must NOT be treated as "saved".
+        if (!response.ok) {
+
+            message.textContent =
+                "Could not save your changes. Please try again.";
+
+            return;
+        }
+
+        window.location.href = "/blog/" + getPostId();
+
+    } catch (error) {
+
+        console.error("Update post error:", error);
+
+        message.textContent = "Unable to connect to the server.";
     }
-
-    if (response.status === 403) {
-
-        message.textContent = "You can only edit your own posts.";
-
-        return;
-    }
-
-    if (response.status === 422) {
-
-        message.textContent =
-            "Please check your title (max 100 characters) and content (max 20,000 characters).";
-
-        return;
-    }
-    window.location.href = "/blog/" + getPostId();
 }
-
-
 // Shows the Edit / Delete buttons on the blog page.
 // Edit    -> only the post's author
 // Delete  -> the post's author OR an admin

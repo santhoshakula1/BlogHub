@@ -12,9 +12,10 @@ from database.database import DATABASE_URL
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
+# "%" has a special meaning in Alembic's settings, so it must be doubled.
 config.set_main_option(
     "sqlalchemy.url",
-    DATABASE_URL
+    DATABASE_URL.replace("%", "%%")
 )
 
 # Interpret the config file for Python logging.
