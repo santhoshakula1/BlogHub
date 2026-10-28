@@ -16,14 +16,38 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-SECRET_KEY = os.getenv("SECRET_KEY")
+SECRET_KEY = (os.getenv("SECRET_KEY") or "").strip()
 ALGORITHM = os.getenv("ALGORITHM", "HS256")
 ACCESS_TOKEN_EXPIRE_MINUTES = int(
     os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30")
 )
 
+MIN_SECRET_KEY_LENGTH = 32
+
+
+EXAMPLE_SECRET_KEYS = {
+    "your-secret-key",
+    "paste-a-long-random-string",
+    "changeme",
+    "secret",
+}
+
 if not SECRET_KEY:
     raise RuntimeError("SECRET_KEY is not configured")
+
+if (
+    SECRET_KEY.lower() in EXAMPLE_SECRET_KEYS
+    or len(SECRET_KEY) < MIN_SECRET_KEY_LENGTH
+):
+    raise RuntimeError(
+        "SECRET_KEY is too weak: use at least 32 random characters, never "
+        "an example value. Create one with: "
+        'python -c "import secrets; print(secrets.token_hex(32))"'
+    )
+
+
+if ALGORITHM not in ("HS256", "HS384", "HS512"):
+    raise RuntimeError("ALGORITHM must be HS256, HS384 or HS512")
 
 oauth2_scheme = OAuth2PasswordBearer(
     tokenUrl="/api/auth/login"
