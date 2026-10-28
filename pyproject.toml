@@ -1,7 +1,7 @@
 [project]
 name = "blog-platform"
 version = "0.1.0"
-description = "Add your description here"
+description = "BlogHub: a multi-user blog platform built with FastAPI, PostgreSQL and vanilla JavaScript"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [

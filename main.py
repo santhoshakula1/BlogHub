@@ -1,7 +1,7 @@
 import logging
 import os
 import time
-from contextlib import asynccontextmanager
+
 from pathlib import Path
 from fastapi import FastAPI, HTTPException, Request, Depends, Query
 from fastapi.exception_handlers import (
@@ -21,7 +21,7 @@ from sqlalchemy.orm import Session
 from starlette.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from database.database import get_db, engine, Base
+from database.database import get_db
 
 from models.post import Post
 from models.user import User
@@ -51,12 +51,7 @@ from utils.password import (
 )
 
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
 
-    
-
-    yield
     
 logging.basicConfig(
     level=logging.INFO,
@@ -70,9 +65,7 @@ limiter = Limiter(
     key_func=get_remote_address,
     enabled=os.getenv("RATE_LIMIT_ENABLED", "true").lower() != "false"
 )
-app = FastAPI(
-    lifespan=lifespan
-)
+app = FastAPI()
 app.state.limiter = limiter
 
 
